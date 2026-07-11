@@ -1,0 +1,6 @@
+{
+  "name": "Wingo Predictor Tool",
+  "description": "Advanced predictive pattern analyzer and floating control panel for Wingo games.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

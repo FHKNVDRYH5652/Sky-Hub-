@@ -1,0 +1,45 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with coin balance and administrative status",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "username": { "type": "string" },
+        "passwordHash": { "type": "string" },
+        "coins": { "type": "integer" },
+        "isAdmin": { "type": "boolean" }
+      },
+      "required": ["uid", "username", "coins", "isAdmin"]
+    },
+    "Transaction": {
+      "title": "Payment Transaction",
+      "description": "Payment submission details for admin approval",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "utr": { "type": "string" },
+        "amount": { "type": "number" },
+        "coins": { "type": "integer" },
+        "planImg": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "coinsCredited": { "type": "boolean" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "userId", "username", "utr", "amount", "coins", "status", "coinsCredited", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "Collection of registered users"
+    },
+    "/transactions/{txnId}": {
+      "schema": "Transaction",
+      "description": "Collection of payment transactions submitted for approval"
+    }
+  }
+}

@@ -8,6 +8,7 @@ import {
 import { User as AppUser, WingoRecord, Prediction, Transaction } from "../types";
 import { playClickSound, playSuccessSound, playLossSound, playJackpotSound } from "../utils/audio";
 import { analyzeWingoHistory } from "../utils/predictor";
+import { apiFetch } from "../utils/apiClient";
 
 interface PredictorWidgetProps {
   currentUser: AppUser | null;
@@ -87,10 +88,8 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
   // Robustly fetch past 100 history & current period
   const fetchHistoryAndPeriod = async () => {
     try {
-      const response = await fetch("/api/wingo-history");
-      if (!response.ok) return;
-      const json = await response.json();
-      if (json.success && json.data) {
+      const json = await apiFetch("/api/wingo-history");
+      if (json && json.success && json.data) {
         // Normalize any variation of API record response to standard WingoRecord format
         const rawList = Array.isArray(json.data) ? json.data : [];
         const normalizedList: WingoRecord[] = rawList.map((item: any) => {
@@ -217,10 +216,8 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
     
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/payment/status?txnId=${activeTxn.id}`);
-        if (!res.ok) return;
-        const json = await res.json();
-        if (json.success && json.transaction) {
+        const json = await apiFetch(`/api/payment/status?txnId=${activeTxn.id}`);
+        if (json && json.success && json.transaction) {
           const updatedTxn: Transaction = json.transaction;
           setActiveTxn(updatedTxn);
           if (updatedTxn.status === "approved") {
@@ -243,10 +240,8 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
   // --- FETCH ALL TRANSACTIONS FOR ADMIN PANEL ---
   const fetchTransactions = async () => {
     try {
-      const res = await fetch("/api/admin/transactions");
-      if (!res.ok) return;
-      const json = await res.json();
-      if (json.success && json.transactions) {
+      const json = await apiFetch("/api/admin/transactions");
+      if (json && json.success && json.transactions) {
         setAllTransactions(json.transactions);
       }
     } catch (e) {
@@ -358,14 +353,13 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
     setGenerating(true);
 
     try {
-      const res = await fetch("/api/user/deduct-coin", {
+      const json = await apiFetch("/api/user/deduct-coin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid: currentUser.uid })
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setErrorMsg(data.message || "Failed to deduct coin.");
+      if (!json || !json.success) {
+        setErrorMsg((json && json.message) || "Failed to deduct coin.");
         setGenerating(false);
         return;
       }
@@ -418,7 +412,7 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
     setSubmittingPayment(true);
 
     try {
-      const res = await fetch("/api/payment/submit", {
+      const json = await apiFetch("/api/payment/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -429,12 +423,11 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
           planImg: selectedPlan.img
         })
       });
-      const json = await res.json();
-      if (json.success && json.transaction) {
+      if (json && json.success && json.transaction) {
         setActiveTxn(json.transaction);
         playSuccessSound();
       } else {
-        alert("Transaction failed on server. Try again.");
+        alert((json && json.message) || "Transaction failed on server. Try again.");
       }
     } catch (e) {
       console.error(e);
@@ -448,12 +441,12 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
   const handleApproveTransaction = async (txnId: string) => {
     playClickSound();
     try {
-      const res = await fetch("/api/admin/approve", {
+      const json = await apiFetch("/api/admin/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ txnId })
       });
-      if (res.ok) {
+      if (json && json.success) {
         fetchTransactions();
         onRefreshUser();
       }
@@ -465,12 +458,12 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
   const handleRejectTransaction = async (txnId: string) => {
     playClickSound();
     try {
-      const res = await fetch("/api/admin/reject", {
+      const json = await apiFetch("/api/admin/reject", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ txnId })
       });
-      if (res.ok) {
+      if (json && json.success) {
         fetchTransactions();
       }
     } catch (e) {

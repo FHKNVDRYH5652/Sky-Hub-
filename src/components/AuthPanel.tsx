@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { User, Key, ShieldCheck, Sparkles, Cpu, AlertTriangle } from "lucide-react";
 import { User as AppUser } from "../types";
 import { playClickSound, playSuccessSound, playLossSound } from "../utils/audio";
+import { apiFetch } from "../utils/apiClient";
 
 interface AuthPanelProps {
   onLoginSuccess: (user: AppUser) => void;
@@ -31,7 +32,7 @@ export default function AuthPanel({ onLoginSuccess }: AuthPanelProps) {
     const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
 
     try {
-      const res = await fetch(endpoint, {
+      const data = await apiFetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -40,16 +41,15 @@ export default function AuthPanel({ onLoginSuccess }: AuthPanelProps) {
         })
       });
 
-      const data = await res.json();
-      if (res.ok && data.success) {
+      if (data && data.success) {
         playSuccessSound();
         onLoginSuccess(data.user);
       } else {
-        setErrorMessage(data.message || "Failed to authenticate.");
+        setErrorMessage((data && data.message) || "Failed to authenticate.");
         playLossSound();
       }
     } catch (err) {
-      setErrorMessage("Network error. Make sure the server is booted.");
+      setErrorMessage("Network error. Make sure your connection is active.");
       playLossSound();
     } finally {
       setLoading(false);

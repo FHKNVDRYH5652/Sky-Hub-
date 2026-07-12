@@ -5,6 +5,7 @@ import AuthPanel from "./components/AuthPanel";
 import PredictorWidget from "./components/PredictorWidget";
 import { User } from "./types";
 import { playClickSound, playSuccessSound } from "./utils/audio";
+import { apiFetch } from "./utils/apiClient";
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -28,13 +29,10 @@ export default function App() {
   // Fetch / Sync profile from backend
   const fetchUserProfile = async (uid: string) => {
     try {
-      const res = await fetch(`/api/user/profile?uid=${uid}`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && json.user) {
-          setCurrentUser(json.user);
-          localStorage.setItem("pt_logged_user", JSON.stringify(json.user));
-        }
+      const json = await apiFetch(`/api/user/profile?uid=${uid}`);
+      if (json && json.success && json.user) {
+        setCurrentUser(json.user);
+        localStorage.setItem("pt_logged_user", JSON.stringify(json.user));
       }
     } catch (e) {
       console.error("Error fetching user profile:", e);

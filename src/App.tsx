@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { LogOut, User as UserIcon, Coins, Cpu, ShieldCheck } from "lucide-react";
+import { LogOut, User as UserIcon, Coins, Cpu } from "lucide-react";
 import AuthPanel from "./components/AuthPanel";
 import PredictorWidget from "./components/PredictorWidget";
 import { User } from "./types";
@@ -9,17 +9,9 @@ import { playClickSound, playSuccessSound } from "./utils/audio";
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isCloned, setIsCloned] = useState(false);
-
-  // Active anti-cracking domain verification & anti-debugging shield
-  useEffect(() => {
-    // Safely bypass checking to prevent breaking fetch loops in dev/evaluator environments.
-    setIsCloned(false);
-  }, []);
 
   // Read login state from localStorage on mount
   useEffect(() => {
-    if (isCloned) return;
     const savedUser = localStorage.getItem("pt_logged_user");
     if (savedUser) {
       try {
@@ -31,7 +23,7 @@ export default function App() {
     } else {
       setLoading(false);
     }
-  }, [isCloned]);
+  }, []);
 
   // Fetch / Sync profile from backend
   const fetchUserProfile = async (uid: string) => {
@@ -61,54 +53,6 @@ export default function App() {
     setCurrentUser(null);
     localStorage.removeItem("pt_logged_user");
   };
-
-  // Render Clone Lockout
-  if (isCloned) {
-    return (
-      <div className="min-h-screen bg-[#070A12] flex flex-col items-center justify-center p-6 text-center select-none font-sans relative overflow-hidden">
-        {/* Neon warning radial background */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,53,94,0.15)_0%,transparent_70%)] pointer-events-none" />
-        
-        {/* Holographic scanner border overlay */}
-        <div className="absolute inset-0 border-[3px] border-[#FF355E]/20 pointer-events-none m-4 rounded-3xl" />
-        
-        <div className="relative z-10 max-w-sm w-full bg-black/80 border border-[#FF355E] rounded-3xl p-6 shadow-[0_0_50px_rgba(255,53,94,0.3)]">
-          <div className="w-16 h-16 rounded-full bg-[#FF355E]/15 border-2 border-[#FF355E] flex items-center justify-center mx-auto mb-5 animate-pulse">
-            <ShieldCheck className="w-8 h-8 text-[#FF355E]" />
-          </div>
-          
-          <h1 className="text-lg font-display font-black tracking-widest text-[#FF355E] uppercase">
-            INTEGRITY VIOLATION
-          </h1>
-          <p className="text-[10px] text-[#7A5CFF] font-display font-bold tracking-widest uppercase mt-1">
-            SOURCE CODE CLONE PROTECTED
-          </p>
-          
-          <div className="my-5 border border-slate-900 bg-slate-950 p-4 rounded-2xl text-left space-y-2 font-mono text-[10px] text-slate-400">
-            <div className="flex justify-between border-b border-slate-900 pb-1.5">
-              <span className="text-slate-600 uppercase">SECURITY STATUS</span>
-              <span className="text-[#FF355E] font-bold">LOCKED_SHIELD</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-900 pb-1.5">
-              <span className="text-slate-600 uppercase">HOST HOSTNAME</span>
-              <span className="text-white font-bold truncate max-w-[150px]">{window.location.hostname || "UNKNOWN"}</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-900 pb-1.5">
-              <span className="text-slate-600 uppercase">INTEGRITY LOCK</span>
-              <span className="text-[#7A5CFF] font-bold">SHA-256_ACTIVE</span>
-            </div>
-            <p className="text-[9px] text-slate-500 leading-normal font-sans pt-1">
-              Unauthorized copying, hosting, or redistribution of this application has been detected. All core prediction engines have been self-terminated to secure our intellectual property.
-            </p>
-          </div>
-          
-          <span className="text-[9px] text-slate-500 font-display uppercase tracking-widest block mt-4">
-            CONTACT ADMIN TO AUTHORIZE LICENSE
-          </span>
-        </div>
-      </div>
-    );
-  }
 
   // Render Loader
   if (loading) {

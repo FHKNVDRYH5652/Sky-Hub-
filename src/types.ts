@@ -23,6 +23,12 @@ export interface Prediction {
   actualNumber?: number;
   confidence: number;
   predictionType?: "size" | "color";
+  recommendedBet?: string;
+  predictionLayer?: string;
+  secondPrediction?: number;
+  riskLevel?: "Low" | "Medium" | "High";
+  trendType?: "Upward" | "Downward" | "Sideways" | "Reversal";
+  reasoning?: string;
 }
 
 export interface Transaction {

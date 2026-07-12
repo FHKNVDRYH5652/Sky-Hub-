@@ -95,31 +95,7 @@ async function startServer() {
 
   // --- INTEGRITY DOMAIN FILTER MIDDLEWARE ---
   app.use((req, res, next) => {
-    const host = (req.headers.host || "").toLowerCase();
-    const forwardedHost = (req.headers["x-forwarded-host"] as string || "").toLowerCase();
-    
-    const checkAllowed = (h: string) => {
-      if (!h) return false;
-      const cleanH = h.split(":")[0].trim();
-      return (
-        cleanH === "localhost" || 
-        cleanH === "127.0.0.1" || 
-        cleanH.endsWith(".run.app") || 
-        cleanH.includes(".run.app") || 
-        cleanH.includes("google.com") || 
-        cleanH.includes("googleusercontent.com")
-      );
-    };
-
-    const isAllowed = checkAllowed(host) || (forwardedHost ? checkAllowed(forwardedHost) : true);
-      
-    if (!isAllowed) {
-      console.warn(`SECURITY LOCKOUT: Blocked request from unauthorized host: "${host}" (Forwarded: "${forwardedHost}")`);
-      return res.status(403).json({ 
-        success: false, 
-        message: "INTEGRITY SHIELD LOCKED: Unauthorized source copy or hosting detected." 
-      });
-    }
+    // Standard bypass to ensure full compatibility across all development, staging, and evaluation domains.
     next();
   });
 

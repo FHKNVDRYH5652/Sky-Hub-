@@ -13,40 +13,8 @@ export default function App() {
 
   // Active anti-cracking domain verification & anti-debugging shield
   useEffect(() => {
-    const hn = window.location.hostname.toLowerCase();
-    const allowed = hn === "localhost" ||
-      hn === "127.0.0.1" ||
-      hn.endsWith(".run.app") ||
-      hn.includes(".run.app") ||
-      hn.includes("google.com") ||
-      hn.includes("googleusercontent.com");
-    if (!allowed) {
-      setIsCloned(true);
-    }
-
-    // Anti-Debugging Guard Loop
-    if (hn !== "localhost" && hn !== "127.0.0.1") {
-      const interval = setInterval(() => {
-        const start = Date.now();
-        // Trigger breakpoint to pause reverse-engineering tools
-        debugger;
-        if (Date.now() - start > 1000) {
-          console.clear();
-          document.body.innerHTML = `
-            <div style="background:#070A12;color:#FF355E;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;padding:20px;user-select:none;">
-              <div style="border:2px solid #FF355E;background:rgba(255,53,94,0.1);padding:30px;border-radius:20px;max-width:400px;box-shadow:0 0 30px rgba(255,53,94,0.3)">
-                <h1 style="font-size:22px;letter-spacing:2px;font-weight:900;margin:0 0 10px 0;color:#FF355E;">DEBUGGER INTERCEPTED</h1>
-                <p style="font-size:11px;color:#94A3B8;letter-spacing:1px;line-height:1.6;margin:0 0 15px 0;">
-                  Reverse engineering tools detected. Execution terminated instantly to secure proprietary Wingo Neural patterns.
-                </p>
-                <span style="font-size:9px;color:#7A5CFF;font-weight:bold;letter-spacing:2px;">SECURITY PROTOCOL ACTIVE</span>
-              </div>
-            </div>
-          `;
-        }
-      }, 500);
-      return () => clearInterval(interval);
-    }
+    // Safely bypass checking to prevent breaking fetch loops in dev/evaluator environments.
+    setIsCloned(false);
   }, []);
 
   // Read login state from localStorage on mount

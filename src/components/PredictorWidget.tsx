@@ -38,6 +38,15 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
   // Predictions tracking
   const [currentPrediction, setCurrentPrediction] = useState<Prediction | null>(null);
   const [lastPredictionWasLoss, setLastPredictionWasLoss] = useState<boolean>(false);
+  const [lossStreak, setLossStreak] = useState<number>(() => {
+    const saved = localStorage.getItem("pt_loss_streak");
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("pt_loss_streak", lossStreak.toString());
+  }, [lossStreak]);
+
   const [generating, setGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [generatedPeriods, setGeneratedPeriods] = useState<Record<string, Prediction>>({});
@@ -151,14 +160,17 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
             pred.outcome = "jackpot";
             triggerPopup("jackpot", period, pred, match.number);
             setLastPredictionWasLoss(false);
+            setLossStreak(0);
           } else if (sizeMatch || colorMatch) {
             pred.outcome = "win";
             triggerPopup("victory", period, pred, match.number);
             setLastPredictionWasLoss(false);
+            setLossStreak(0);
           } else {
             pred.outcome = "loss";
             triggerPopup("defeat", period, pred, match.number);
             setLastPredictionWasLoss(true); // Sets the high probability next update flag!
+            setLossStreak(prev => prev + 1);
           }
           
           updatedGeneratedPeriods[period] = pred;
@@ -367,7 +379,7 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
 
     // Pattern analysis trigger
     setTimeout(() => {
-      const result = analyzeWingoHistory(history, currentPeriod, lastPredictionWasLoss);
+      const result = analyzeWingoHistory(history, currentPeriod, lossStreak);
       
       const newPrediction: Prediction = {
         ...result,
@@ -783,7 +795,7 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
                   )}
 
                   {/* Main holographic HUD prediction panel screen */}
-                  <div className="relative bg-black/80 rounded-2xl border border-slate-800/80 h-36 flex flex-col items-center justify-center overflow-hidden">
+                  <div className="relative bg-black/80 rounded-2xl border border-slate-800/80 min-h-36 py-5 px-4 flex flex-col items-center justify-center overflow-hidden">
                     {/* Secure Hidden Admin Activator Button (25% opacity) */}
                     <button
                       onClick={handleSecureClick}
@@ -803,7 +815,7 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
                         </span>
                       </div>
                     ) : generatedPeriods[currentPeriod] ? (
-                      <div className="flex flex-col items-center gap-1.5 relative z-10 text-center">
+                      <div className="w-full flex flex-col items-center gap-1.5 relative z-10 text-center">
                         {/* Display Prediction */}
                         <div className="flex items-center gap-2">
                           {generatedPeriods[currentPeriod].size ? (
@@ -821,7 +833,7 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
                           )}
                         </div>
                         
-                        {/* Target Wingo Numbers (e.g. Small 2, 3 as requested) */}
+                        {/* Target Wingo Numbers */}
                         <div className="mt-2 flex items-center gap-2">
                           <span className="text-[9px] text-slate-500 font-display font-bold tracking-wider">TARGET NUMBERS:</span>
                           <div className="flex gap-1.5">
@@ -832,6 +844,60 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
                             ))}
                           </div>
                         </div>
+
+                        {/* Hybrid Core Multi-Metrics HUD */}
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 w-full max-w-xs mt-3 pt-3 border-t border-slate-900/80 text-left">
+                          <div className="flex flex-col">
+                            <span className="text-[8px] text-slate-500 font-display font-black uppercase tracking-wider">Prediction</span>
+                            <span className="text-[11px] font-mono font-black text-white">{generatedPeriods[currentPeriod].numbers[0]}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[8px] text-slate-500 font-display font-black uppercase tracking-wider">Second Pred</span>
+                            <span className="text-[11px] font-mono font-black text-[#00C8FF]">{generatedPeriods[currentPeriod].secondPrediction ?? generatedPeriods[currentPeriod].numbers[1]}</span>
+                          </div>
+                          
+                          {generatedPeriods[currentPeriod].predictionType === "color" ? (
+                            <div className="flex flex-col">
+                              <span className="text-[8px] text-slate-500 font-display font-black uppercase tracking-wider">Predicted Color</span>
+                              <span className={`text-[11px] font-display font-black ${generatedPeriods[currentPeriod].color === 'RED' ? 'text-[#FF355E]' : 'text-[#10B981]'}`}>{generatedPeriods[currentPeriod].color}</span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col">
+                              <span className="text-[8px] text-slate-500 font-display font-black uppercase tracking-wider">Predicted Size</span>
+                              <span className={`text-[11px] font-display font-black ${generatedPeriods[currentPeriod].size === 'BIG' ? 'text-[#FF2D95]' : 'text-[#00C8FF]'}`}>{generatedPeriods[currentPeriod].size}</span>
+                            </div>
+                          )}
+
+                          <div className="flex flex-col">
+                            <span className="text-[8px] text-slate-500 font-display font-black uppercase tracking-wider">Trend</span>
+                            <span className="text-[11px] font-display font-black text-[#F8C84A]">{generatedPeriods[currentPeriod].trendType || 'Upward'}</span>
+                          </div>
+
+                          <div className="flex flex-col col-span-2 mt-1 pt-1 border-t border-slate-900/30">
+                            <span className="text-[8px] text-slate-500 font-display font-black uppercase tracking-wider">Risk Filter</span>
+                            <span className={`text-[10px] font-display font-black tracking-wide uppercase ${generatedPeriods[currentPeriod].riskLevel === 'High' ? 'text-[#FF355E] animate-pulse' : 'text-[#10B981]'}`}>{generatedPeriods[currentPeriod].riskLevel || 'Low'}</span>
+                          </div>
+                        </div>
+
+                        {generatedPeriods[currentPeriod].reasoning && (
+                          <div className="mt-2 text-[8px] text-slate-400 font-display tracking-wide italic max-w-xs">
+                            Reason: {generatedPeriods[currentPeriod].reasoning}
+                          </div>
+                        )}
+
+                        {/* Layer and Recommended Bet Info */}
+                        <div className="flex flex-col gap-1 items-center mt-3 pt-2 border-t border-slate-900/40 w-full max-w-xs">
+                          {generatedPeriods[currentPeriod].predictionLayer && (
+                            <span className="text-[8px] font-display font-black tracking-widest text-[#7A5CFF] uppercase bg-[#7A5CFF]/10 px-2.5 py-0.5 rounded border border-[#7A5CFF]/20">
+                              ENGINE: {generatedPeriods[currentPeriod].predictionLayer}
+                            </span>
+                          )}
+                          {generatedPeriods[currentPeriod].recommendedBet && (
+                            <span className="text-[8px] font-display font-black tracking-widest text-[#F8C84A] uppercase bg-[#F8C84A]/10 px-2.5 py-0.5 rounded border border-[#F8C84A]/20 animate-pulse">
+                              BET: {generatedPeriods[currentPeriod].recommendedBet}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-1.5 text-slate-500 relative z-10 text-center px-4">
@@ -840,7 +906,7 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
                           PREDICTOR READY
                         </span>
                         <span className="text-[10px] text-slate-500 max-w-xs leading-relaxed">
-                          Click Generate Prediction to analyze 100 historical records and reveal the winning parameters.
+                          Click Generate Prediction to analyze Wingo records under the SKY ULTRA PRO MAX HYBRID ENGINE V1.
                         </span>
                       </div>
                     )}
@@ -985,33 +1051,31 @@ export default function PredictorWidget({ currentUser, onLogout, onRefreshUser }
                           OFFICIAL SCANNER DECK
                         </span>
                         
-                        {/* 100% Vector geometric scanner graphic without cheap emojis */}
-                        <div className="w-32 h-32 bg-white p-2 rounded-2xl border-2 border-[#00C8FF] relative flex items-center justify-center shadow-[0_0_20px_rgba(0,200,255,0.2)]">
-                          <div className="absolute top-1 left-1 w-4 h-4 border-t-2 border-l-2 border-[#FF2D95]" />
-                          <div className="absolute top-1 right-1 w-4 h-4 border-t-2 border-r-2 border-[#FF2D95]" />
-                          <div className="absolute bottom-1 left-1 w-4 h-4 border-b-2 border-l-2 border-[#FF2D95]" />
-                          <div className="absolute bottom-1 right-1 w-4 h-4 border-b-2 border-r-2 border-[#FF2D95]" />
+                        {/* 100% Vector geometric scanner graphic with real custom qr.png image overlay */}
+                        <div className="w-32 h-32 bg-white p-1 rounded-2xl border-2 border-[#00C8FF] relative flex items-center justify-center shadow-[0_0_20px_rgba(0,200,255,0.2)] overflow-hidden">
+                          <div className="absolute top-1 left-1 w-4 h-4 border-t-2 border-l-2 border-[#FF2D95] z-10" />
+                          <div className="absolute top-1 right-1 w-4 h-4 border-t-2 border-r-2 border-[#FF2D95] z-10" />
+                          <div className="absolute bottom-1 left-1 w-4 h-4 border-b-2 border-l-2 border-[#FF2D95] z-10" />
+                          <div className="absolute bottom-1 right-1 w-4 h-4 border-b-2 border-r-2 border-[#FF2D95] z-10" />
                           
-                          <div className="w-full h-full flex flex-col justify-between opacity-80">
-                            <div className="flex justify-between w-full h-1/4">
-                              <div className="w-5 h-5 bg-slate-950 rounded" />
-                              <div className="w-5 h-5 bg-slate-950 rounded" />
-                            </div>
-                            <div className="h-[2px] bg-[#00C8FF] w-full animate-pulse" />
-                            <div className="flex justify-between w-full h-1/4">
-                              <div className="w-5 h-5 bg-slate-950 rounded" />
-                              <div className="w-3 h-3 bg-slate-950 self-end rounded-sm" />
-                            </div>
-                          </div>
+                          <img 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=perfect.k@ptyes&pn=Wingo%20Predictor&am=${selectedPlan.amount}&cu=INR`)}`}
+                            alt="Payment QR" 
+                            className="w-full h-full object-contain relative z-0 p-1 bg-white" 
+                            referrerPolicy="no-referrer"
+                          />
+                          
+                          {/* Pulsing scanning bar line */}
+                          <div className="absolute left-1 right-1 h-[2px] bg-[#00C8FF] shadow-[0_0_8px_#00C8FF] animate-bounce z-10 top-1/2" />
                         </div>
 
                         {/* UPI Copy Box */}
                         <div className="mt-4 w-full flex items-center justify-between bg-black/60 border border-slate-900 rounded-xl py-2 px-3 text-[10px]">
-                          <span className="text-slate-400 font-mono font-bold">paytm.qr.predictor@paytm</span>
+                          <span className="text-slate-400 font-mono font-bold">perfect.k@ptyes</span>
                           <button 
                             onClick={() => {
                               playClickSound();
-                              navigator.clipboard.writeText("paytm.qr.predictor@paytm");
+                              navigator.clipboard.writeText("perfect.k@ptyes");
                               setCopiedUpi(true);
                               setTimeout(() => setCopiedUpi(false), 2000);
                             }}

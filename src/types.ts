@@ -29,6 +29,7 @@ export interface Prediction {
   riskLevel?: "Low" | "Medium" | "High";
   trendType?: "Upward" | "Downward" | "Sideways" | "Reversal";
   reasoning?: string;
+  recommendSkip?: boolean;
 }
 
 export interface Transaction {
